@@ -5,12 +5,13 @@ from langchain.memory import ConversationBufferMemory
 
 from utils.gemini_utils import get_ai_response
 
-def create_rag_chain(api_key=None):
+def create_rag_chain(api_key=None, model_version=None):
     """
     Create a RAG chain using LangChain with Google Gemini.
     
     Args:
         api_key (str, optional): Google Gemini API key.
+        model_version (str, optional): The specific model version to use.
         
     Returns:
         LLMChain: A LangChain chain for RAG responses.
@@ -33,9 +34,18 @@ def create_rag_chain(api_key=None):
         template=template
     )
     
+    # Get the appropriate model name from the model version
+    from utils.gemini_utils import GEMINI_MODELS, DEFAULT_TEXT_MODEL
+    
+    # Use the specified model or the default
+    selected_model = model_version if model_version and model_version in GEMINI_MODELS else DEFAULT_TEXT_MODEL
+    
+    # Get the API model name
+    model_name = GEMINI_MODELS[selected_model]["api_name"]
+    
     # Create the LLM with Google Gemini
     llm = ChatGoogleGenerativeAI(
-        model="gemini-pro",
+        model=model_name,
         google_api_key=api_key,
         temperature=0.3
     )
@@ -49,7 +59,7 @@ def create_rag_chain(api_key=None):
     
     return chain
 
-def get_rag_response(query, context, api_key=None):
+def get_rag_response(query, context, api_key=None, model_version=None):
     """
     Get a RAG-enhanced response using the provided context.
     
@@ -57,13 +67,14 @@ def get_rag_response(query, context, api_key=None):
         query (str): The user's query.
         context (list): List of relevant information from the vector store.
         api_key (str, optional): Google Gemini API key.
+        model_version (str, optional): The specific model version to use.
         
     Returns:
         str: The RAG-enhanced response.
     """
     try:
         # Create the chain
-        chain = create_rag_chain(api_key)
+        chain = create_rag_chain(api_key, model_version)
         
         # Convert the context list to a string
         context_str = "\n\n".join(context)
@@ -78,9 +89,9 @@ def get_rag_response(query, context, api_key=None):
         
         {context}
         """
-        return get_ai_response(query, system_prompt=system_prompt, api_key=api_key)
+        return get_ai_response(query, system_prompt=system_prompt, api_key=api_key, model_version=model_version)
 
-def get_multimodal_response(query, image_analysis, api_key=None):
+def get_multimodal_response(query, image_analysis, api_key=None, model_version=None):
     """
     Get a response that incorporates both text query and image analysis.
     
@@ -88,6 +99,7 @@ def get_multimodal_response(query, image_analysis, api_key=None):
         query (str): The user's text query.
         image_analysis (str): Analysis of the uploaded image.
         api_key (str, optional): Google Gemini API key.
+        model_version (str, optional): The specific model version to use.
         
     Returns:
         str: Response that considers both the text and image.
@@ -102,4 +114,4 @@ def get_multimodal_response(query, image_analysis, api_key=None):
     Please answer the user's question in relation to this image.
     """
     
-    return get_ai_response(query, system_prompt=system_prompt, api_key=api_key)
+    return get_ai_response(query, system_prompt=system_prompt, api_key=api_key, model_version=model_version)
