@@ -1,10 +1,5 @@
-from PIL import Image
+from PIL import Image, ImageOps
 import io
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 def process_image(image):
     """
@@ -16,33 +11,18 @@ def process_image(image):
     Returns:
         PIL.Image: The processed image.
     """
-    try:
-        # Resize large images to reduce API costs and improve performance
-        max_dim = 1200  # Maximum dimension (width or height)
-        
-        width, height = image.size
-        
-        # Only resize if the image is larger than the maximum dimension
-        if width > max_dim or height > max_dim:
-            # Calculate the scaling factor
-            scaling_factor = min(max_dim / width, max_dim / height)
-            
-            # Calculate new dimensions
-            new_width = int(width * scaling_factor)
-            new_height = int(height * scaling_factor)
-            
-            # Resize the image
-            image = image.resize((new_width, new_height), Image.LANCZOS)
-            
-        # Ensure the image is in RGB mode (not RGBA, grayscale, etc.)
-        if image.mode != 'RGB':
-            image = image.convert('RGB')
-            
-        return image
-        
-    except Exception as e:
-        logger.error(f"Error processing image: {str(e)}")
-        return image  # Return the original image if processing fails
+    # Ensure image is in RGB mode
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+    
+    # Resize image if it's too large (maintain aspect ratio)
+    max_dimension = 1024
+    if max(image.size) > max_dimension:
+        ratio = max_dimension / max(image.size)
+        new_size = (int(image.width * ratio), int(image.height * ratio))
+        image = image.resize(new_size, Image.LANCZOS)
+    
+    return image
 
 def convert_image_to_bytes(image):
     """
@@ -54,17 +34,9 @@ def convert_image_to_bytes(image):
     Returns:
         bytes: The image as bytes.
     """
-    if not image:
-        return None
-        
-    try:
-        img_byte_array = io.BytesIO()
-        image.save(img_byte_array, format='JPEG')
-        return img_byte_array.getvalue()
-        
-    except Exception as e:
-        logger.error(f"Error converting image to bytes: {str(e)}")
-        return None
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    return buffered.getvalue()
 
 def bytes_to_image(image_bytes):
     """
@@ -76,12 +48,11 @@ def bytes_to_image(image_bytes):
     Returns:
         PIL.Image: The reconstructed image.
     """
-    if not image_bytes:
+    if image_bytes is None:
         return None
-        
+    
     try:
         return Image.open(io.BytesIO(image_bytes))
-        
     except Exception as e:
-        logger.error(f"Error converting bytes to image: {str(e)}")
+        print(f"Error converting bytes to image: {e}")
         return None
