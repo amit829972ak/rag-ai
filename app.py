@@ -39,8 +39,8 @@ if "conversation_id" not in st.session_state:
     st.session_state.agent.set_conversation_id(conversation.id)
 
 # App title and description
-st.title("Multimodal RAG Chatbot")
-st.markdown("Chat with an AI assistant that can see images, understand documents, and access relevant knowledge using either Google Gemini or OpenAI models.")
+st.title("Multimodal RAG Chatbot with Agentic AI")
+st.markdown("Chat with an intelligent agent that can see images, understand documents, access relevant knowledge, and adapt its reasoning to your needs using either Google Gemini or OpenAI models.")
 
 # Welcome message and instructions
 if "visited" not in st.session_state:
@@ -48,11 +48,11 @@ if "visited" not in st.session_state:
     
     welcome_container = st.container()
     with welcome_container:
-        st.info("👋 Welcome to the Multimodal RAG Chatbot!")
+        st.info("👋 Welcome to the Multimodal RAG Chatbot with Agentic AI!")
         
         with st.expander("How to use this chatbot", expanded=True):
             st.markdown("""
-            This chatbot can interact with you through text, images, and documents. Here's how to use it:
+            This chatbot features advanced agentic AI capabilities with reasoning, memory, and adaptive responses. Here's how to use it:
             
             1. **Select Model**: Choose between Google Gemini or OpenAI models in the sidebar.
             
@@ -66,7 +66,15 @@ if "visited" not in st.session_state:
             5. **Document Analysis**: Upload a document from the sidebar, then ask questions about its content.
                - Supported formats: CSV, TSV, XLSX, PDF, TXT, DOCX
                
-            6. **Start Over**: Use the "New Conversation" button in the sidebar to start fresh.
+            6. **Agentic Capabilities**: The agent learns from your conversation, identifies key concepts, and adapts its responses:
+               - Maintains memory about your conversation history
+               - Creates reasoning plans for different query types
+               - Uses fallback strategies when primary approaches fail
+               - Self-evaluates its own performance
+               
+            7. **Agent Insights**: Explore the agent's memory, reasoning, and performance in the "Agent Insights & Reasoning" section at the bottom.
+                        
+            8. **Start Over**: Use the "New Conversation" button in the sidebar to start fresh.
             
             Try asking questions about uploaded images or documents, or any general knowledge queries!
             """)
@@ -397,15 +405,90 @@ if query:
     with st.chat_message("assistant"):
         st.markdown(response)
 
+# Advanced Agent Insights Section
+st.markdown("---")
+
+# Create an expander for Agent Insights
+with st.expander("🧠 Agent Insights & Reasoning", expanded=False):
+    # Tabs for different insights
+    insight_tab1, insight_tab2, insight_tab3 = st.tabs(["Memory & Reflections", "Performance Metrics", "Debug Info"])
+    
+    with insight_tab1:
+        st.markdown("### Agent Memory & Reflections")
+        # Get and display agent memory summary
+        agent_memory = st.session_state.agent.get_agent_memory_summary()
+        st.code(agent_memory, language="text")
+        
+        # Add a button to reset memory
+        if st.button("Reset Agent Memory"):
+            st.session_state.agent.reset_memory()
+            st.success("Agent memory has been reset!")
+            st.rerun()
+    
+    with insight_tab2:
+        st.markdown("### Performance Metrics")
+        agent_state = st.session_state.agent.get_agent_state()
+        
+        # Create metrics display
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
+        with metric_col1:
+            st.metric(
+                label="Successful Responses", 
+                value=agent_state["performance_metrics"]["successful_responses"]
+            )
+            st.metric(
+                label="RAG Knowledge Hits", 
+                value=agent_state["performance_metrics"]["rag_hits"]
+            )
+        
+        with metric_col2:
+            st.metric(
+                label="Image Analyses", 
+                value=agent_state["performance_metrics"]["image_analyses"]
+            )
+            st.metric(
+                label="Document Analyses", 
+                value=agent_state["performance_metrics"]["document_analyses"]
+            )
+        
+        with metric_col3:
+            st.metric(
+                label="Failed Responses", 
+                value=agent_state["performance_metrics"]["failed_responses"]
+            )
+            st.metric(
+                label="Current Model", 
+                value=f"{agent_state['model'].capitalize()}"
+            )
+    
+    with insight_tab3:
+        st.markdown("### Agent Debug Information")
+        
+        # Display last reasoning plan
+        if agent_state["last_plan"]:
+            st.markdown("#### Last Reasoning Plan")
+            plan_items = [f"**Step {i+1}:** {step}" for i, step in enumerate(agent_state["last_plan"])]
+            st.markdown("\n".join(plan_items))
+        
+        # Display last query type
+        if agent_state["last_query_type"]:
+            st.markdown(f"**Last Query Type:** {agent_state['last_query_type']}")
+        
+        # Raw state data for debugging
+        st.markdown("#### Raw Agent State")
+        st.json(agent_state)
+
 # Footer with app information
 st.markdown("---")
-st.markdown("**Multimodal RAG Chatbot** | A demonstration of retrieval-augmented generation with multimodal capabilities")
+st.markdown("**Multimodal RAG Chatbot with Agentic AI** | A demonstration of retrieval-augmented generation with multimodal capabilities and agent reasoning")
 
 # Key capability indicators at the bottom
-capability_col1, capability_col2, capability_col3 = st.columns(3)
+capability_col1, capability_col2, capability_col3, capability_col4 = st.columns(4)
 with capability_col1:
     st.info("💬 Text Processing", icon="💬")
 with capability_col2:
     st.info("🖼️ Image Analysis", icon="🖼️")
 with capability_col3:
     st.info("📄 Document Processing", icon="📄")
+with capability_col4:
+    st.info("🧠 Agentic Reasoning", icon="🧠")
